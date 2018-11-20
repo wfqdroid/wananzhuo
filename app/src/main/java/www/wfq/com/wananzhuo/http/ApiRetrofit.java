@@ -6,6 +6,7 @@ import retrofit2.Retrofit;
 import retrofit2.adapter.rxjava2.RxJava2CallAdapterFactory;
 import retrofit2.converter.gson.GsonConverterFactory;
 import retrofit2.converter.scalars.ScalarsConverterFactory;
+import www.wfq.com.wananzhuo.common.CacheInterceptor;
 
 import java.io.IOException;
 import java.util.concurrent.TimeUnit;
@@ -18,7 +19,7 @@ public class ApiRetrofit {
     private OkHttpClient client;
     private ApiServer apiServer;
 
-    private String TAG = "ApiRetrofit";
+    private String TAG = "WFQ";
 
     /**
      * 请求访问quest
@@ -45,10 +46,38 @@ public class ApiRetrofit {
     };
 
 
+    /**
+     * 网络缓存，可以通过maxAge来设置最大存活时间，在该时间之内再次请求网络的话会取缓存的数据
+     */
+    static Interceptor netInterceptor = new Interceptor() {
+        @Override
+        public Response intercept(Chain chain) throws IOException {
+            Request request = chain.request();
+            Response response = chain.proceed(request);
+
+            int maxAge = 60;
+            return response.newBuilder()
+                    .removeHeader("Pragma")// 清除头信息，因为服务器如果不支持，会返回一些干扰信息，不清除下面无法生效
+                    .removeHeader("Cache-Control")
+                    .header("Cache-Control", "public, max-age=" + maxAge)
+                    .build();
+        }
+    };
+
+
+
+
     public ApiRetrofit() {
+
+        Cache cache = new Cache(CacheManager.getInstance().getCacheFile(),10 << 20);
+
         client = new OkHttpClient.Builder()
                 //添加log拦截器
                 .addInterceptor(interceptor)
+//                .addNetworkInterceptor(netInterceptor)
+                .addInterceptor(new CacheInterceptor())
+                .addNetworkInterceptor(new CacheInterceptor())
+                .cache(cache)
                 .connectTimeout(10, TimeUnit.SECONDS)
                 .readTimeout(10, TimeUnit.SECONDS)
                 .build();

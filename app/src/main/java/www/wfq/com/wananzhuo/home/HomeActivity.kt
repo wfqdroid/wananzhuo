@@ -3,6 +3,7 @@ package www.wfq.com.wananzhuo.home
 import android.support.v7.widget.LinearLayoutManager
 import kotlinx.android.synthetic.main.activity_home.*
 import www.wfq.com.wananzhuo.R
+import www.wfq.com.wananzhuo.common.CountDownManager
 import www.wfq.com.wananzhuo.http.BaseActivity
 
 class HomeActivity : BaseActivity<HomePresenter>(), IHomeView {
@@ -27,5 +28,22 @@ class HomeActivity : BaseActivity<HomePresenter>(), IHomeView {
             it.adapter = mAdapter
         }
 
+        /**
+         * 测试OkHttp的缓存
+         */
+        CountDownManager.getInstance().startCountDown(30).setCallback(object : CountDownManager.callback {
+            override fun onNext(time: Int) {
+            }
+
+            override fun onComplete() {
+                presenter.fetchData(0)
+            }
+        })
+
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        CountDownManager.getInstance().cacelCallback()
     }
 }
